@@ -731,20 +731,32 @@ static int proclist(const char *path, int omode, int max, bool pv, bool px, cons
       printerr(hdb);
       err = true;
     }
-    TCXSTR *key = tcxstrnew();
-    TCXSTR *val = tcxstrnew();
-    int cnt = 0;
-    while(tchdbiternext3(hdb, key, val)){
-      printdata(tcxstrptr(key), tcxstrsize(key), px);
-      if(pv){
-        putchar('\t');
-        printdata(tcxstrptr(val), tcxstrsize(val), px);
+
+    if(pv){
+      TCXSTR *key = tcxstrnew();
+      TCXSTR *val = tcxstrnew();
+      int cnt = 0;
+      while(tchdbiternext3(hdb, key, val)){
+	printdata(tcxstrptr(key), tcxstrsize(key), px);
+	putchar('\t');
+	printdata(tcxstrptr(val), tcxstrsize(val), px);
+	putchar('\n');
+	if(max >= 0 && ++cnt >= max) break;
       }
-      putchar('\n');
-      if(max >= 0 && ++cnt >= max) break;
+      tcxstrdel(val);
+      tcxstrdel(key);
+
+    } else {
+      char *kbuf;
+      int ksiz;
+      int cnt = 0;
+      while((kbuf = tchdbiternext(hdb, &ksiz)) != NULL) {
+	printdata(kbuf, ksiz, px);
+	putchar('\n');
+	tcfree(kbuf);
+	if(max >= 0 && ++cnt >= max) break;
+      }
     }
-    tcxstrdel(val);
-    tcxstrdel(key);
   }
   if(!tchdbclose(hdb)){
     if(!err) printerr(hdb);
