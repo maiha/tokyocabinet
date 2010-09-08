@@ -359,6 +359,16 @@ bool tctdbputkeep3(TCTDB *tdb, const char *pkstr, const char *cstr);
 bool tctdbputcat(TCTDB *tdb, const void *pkbuf, int pksiz, TCMAP *cols);
 
 
+/* Merge columns of the existing record in a table database object.
+   `tdb' specifies the table database object connected as a writer.
+   `pkbuf' specifies the pointer to the region of the primary key.
+   `pksiz' specifies the size of the region of the primary key.
+   `cols' specifies a map object containing columns.
+   If successful, the return value is true, else, it is false.
+   If there is no corresponding record, a new record is created. */
+bool tctdbputmerge(TCTDB *tdb, const void *pkbuf, int pksiz, TCMAP *cols);
+
+
 /* Concatenate columns in a table database object with a zero separated column string.
    `tdb' specifies the table database object connected as a writer.
    `pkbuf' specifies the pointer to the region of the primary key.

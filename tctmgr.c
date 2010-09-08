@@ -102,7 +102,7 @@ static void usage(void){
   fprintf(stderr, "usage:\n");
   fprintf(stderr, "  %s create [-tl] [-td|-tb|-tt|-tx] path [bnum [apow [fpow]]]\n", g_progname);
   fprintf(stderr, "  %s inform [-nl|-nb] path\n", g_progname);
-  fprintf(stderr, "  %s put [-nl|-nb] [-sx] [-dk|-dc|-dai|-dad] path pkey [cols...]\n",
+  fprintf(stderr, "  %s put [-nl|-nb] [-sx] [-dk|-dc|-dm|-dai|-dad] path pkey [cols...]\n",
           g_progname);
   fprintf(stderr, "  %s out [-nl|-nb] [-sx] path pkey\n", g_progname);
   fprintf(stderr, "  %s get [-nl|-nb] [-sx] [-px] [-pz] path pkey\n", g_progname);
@@ -261,6 +261,8 @@ static int runput(int argc, char **argv){
         dmode = -1;
       } else if(!strcmp(argv[i], "-dc")){
         dmode = 1;
+      } else if(!strcmp(argv[i], "-dm")){
+        dmode = 2;
       } else if(!strcmp(argv[i], "-dai")){
         dmode = 10;
       } else if(!strcmp(argv[i], "-dad")){
@@ -755,6 +757,12 @@ static int procput(const char *path, const char *pkbuf, int pksiz, TCMAP *cols,
       break;
     case 1:
       if(!tctdbputcat(tdb, pkbuf, pksiz, cols)){
+        printerr(tdb);
+        err = true;
+      }
+      break;
+    case 2:
+      if(!tctdbputmerge(tdb, pkbuf, pksiz, cols)){
         printerr(tdb);
         err = true;
       }

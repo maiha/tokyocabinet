@@ -50,7 +50,8 @@
 enum {                                   // enumeration for duplication behavior
   TDBPDOVER,                             // overwrite an existing value
   TDBPDKEEP,                             // keep the existing value
-  TDBPDCAT                               // concatenate values
+  TDBPDCAT,                              // concatenate values
+  TDBPDMERGE                             // merge values
 };
 
 typedef struct {                         // type of structure for a sort record
@@ -430,6 +431,26 @@ bool tctdbputcat3(TCTDB *tdb, const char *pkstr, const char *cstr){
   TCMAP *cols = tcstrsplit3(cstr, "\t");
   bool rv = tctdbputcat(tdb, pkstr, strlen(pkstr), cols);
   tcmapdel(cols);
+  return rv;
+}
+
+
+/* Merge record */
+bool tctdbputmerge(TCTDB *tdb, const void *pkbuf, int pksiz, TCMAP *cols){
+  assert(tdb && pkbuf && pksiz >= 0 && cols);
+  int vsiz;
+  if(tcmapget(cols, "", 0, &vsiz)){
+    tctdbsetecode(tdb, TCEINVALID, __FILE__, __LINE__, __func__);
+    return false;
+  }
+  if(!TDBLOCKMETHOD(tdb, true)) return false;
+  if(!tdb->open || !tdb->wmode){
+    tctdbsetecode(tdb, TCEINVALID, __FILE__, __LINE__, __func__);
+    TDBUNLOCKMETHOD(tdb);
+    return false;
+  }
+  bool rv = tctdbputimpl(tdb, pkbuf, pksiz, cols, TDBPDMERGE);
+  TDBUNLOCKMETHOD(tdb);
   return rv;
 }
 
@@ -2128,6 +2149,26 @@ static bool tctdbputimpl(TCTDB *tdb, const void *pkbuf, int pksiz, TCMAP *cols, 
       char *cbuf = tcmapdump(ocols, &csiz);
       if(!tchdbput(tdb->hdb, pkbuf, pksiz, cbuf, csiz)) err = true;
       TCFREE(cbuf);
+
+    } else if(dmode == TDBPDMERGE){
+      /* merge ocols and cols into ncols */
+      TCMAP *ncols = tcmapdup(ocols);
+      tcmapiterinit(cols);
+      const char *kbuf;
+      int ksiz;
+      while((kbuf = tcmapiternext(cols, &ksiz)) != NULL){
+        int vsiz;
+        const char *vbuf = tcmapiterval(kbuf, &vsiz);
+	tcmapput(ncols, kbuf, ksiz, vbuf, vsiz);
+      }
+
+      if(!tctdbidxput(tdb, pkbuf, pksiz, ncols)) err = true;
+      int csiz;
+      char *cbuf = tcmapdump(ncols, &csiz);
+      tcmapdel(ncols);
+      if(!tchdbput(tdb->hdb, pkbuf, pksiz, cbuf, csiz)) err = true;
+      TCFREE(cbuf);
+
     } else {
       TCMAP *ncols = tcmapnew2(TCMAPRNUM(cols) + 1);
       tcmapiterinit(cols);
