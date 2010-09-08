@@ -737,12 +737,20 @@ static int proclist(const char *path, int omode, int max, bool pv, bool px, cons
       TCXSTR *val = tcxstrnew();
       int cnt = 0;
       while(tchdbiternext3(hdb, key, val)){
-	printdata(tcxstrptr(key), tcxstrsize(key), px);
-	putchar('\t');
-	printdata(tcxstrptr(val), tcxstrsize(val), px);
-	putchar('\n');
-	if(max >= 0 && ++cnt >= max) break;
+        printdata(tcxstrptr(key), tcxstrsize(key), px);
+        putchar('\t');
+        printdata(tcxstrptr(val), tcxstrsize(val), px);
+        putchar('\n');
+
+        if(cnt > 0 && cnt % 100 == 0){
+          putc('.', stderr);
+          fflush(stderr);
+          if(cnt % 5000 == 0) fprintf(stderr, " (%08d)\n", cnt);
+        }
+        cnt++;
+        if(max >= 0 && cnt >= max) break;
       }
+      fprintf(stderr, " (%08d)\n", cnt);
       tcxstrdel(val);
       tcxstrdel(key);
 
