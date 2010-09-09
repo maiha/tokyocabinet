@@ -47,13 +47,6 @@
 #define TDBHINTUSIZ    256               // unit size of the hint string
 #define TDBORDRATIO    0.2               // ratio of records to use the order index
 
-enum {                                   // enumeration for duplication behavior
-  TDBPDOVER,                             // overwrite an existing value
-  TDBPDKEEP,                             // keep the existing value
-  TDBPDCAT,                              // concatenate values
-  TDBPDMERGE                             // merge values
-};
-
 typedef struct {                         // type of structure for a sort record
   const char *kbuf;                      // pointer to the primary key
   int ksiz;                              // size of the primary key
@@ -451,6 +444,16 @@ bool tctdbputmerge(TCTDB *tdb, const void *pkbuf, int pksiz, TCMAP *cols){
   }
   bool rv = tctdbputimpl(tdb, pkbuf, pksiz, cols, TDBPDMERGE);
   TDBUNLOCKMETHOD(tdb);
+  return rv;
+}
+
+
+/* Merge record with a tab separated column string. */
+bool tctdbputmerge3(TCTDB *tdb, const char *pkstr, const char *cstr){
+  assert(tdb && pkstr && cstr);
+  TCMAP *cols = tcstrsplit3(cstr, "\t");
+  bool rv = tctdbputmerge(tdb, pkstr, strlen(pkstr), cols);
+  tcmapdel(cols);
   return rv;
 }
 
