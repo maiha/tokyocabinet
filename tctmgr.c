@@ -40,6 +40,7 @@ static int runsearch(int argc, char **argv);
 static int runoptimize(int argc, char **argv);
 static int runsetindex(int argc, char **argv);
 static int runimporttsv(int argc, char **argv);
+static int runmergetsv(int argc, char **argv);
 static int runversion(int argc, char **argv);
 static int proccreate(const char *path, int bnum, int apow, int fpow, int opts);
 static int procinform(const char *path, int omode);
@@ -55,6 +56,8 @@ static int procoptimize(const char *path, int bnum, int apow, int fpow, int opts
                         bool df);
 static int procsetindex(const char *path, const char *name, int omode, int type);
 static int procimporttsv(const char *path, const char *file, int omode, bool sc);
+static int procmergetsv(const char *path, const char *file, int omode, bool sc);
+static int procimporttsvimpl(const char *path, const char *file, int omode, int dmode, bool sc);
 static int procversion(void);
 
 
@@ -86,6 +89,8 @@ int main(int argc, char **argv){
     rv = runsetindex(argc, argv);
   } else if(!strcmp(argv[1], "importtsv")){
     rv = runimporttsv(argc, argv);
+  } else if(!strcmp(argv[1], "mergetsv")){
+    rv = runmergetsv(argc, argv);
   } else if(!strcmp(argv[1], "version") || !strcmp(argv[1], "--version")){
     rv = runversion(argc, argv);
   } else {
@@ -113,6 +118,7 @@ static void usage(void){
           " path [bnum [apow [fpow]]]\n", g_progname);
   fprintf(stderr, "  %s setindex [-nl|-nb] [-it type] path name\n", g_progname);
   fprintf(stderr, "  %s importtsv [-nl|-nb] [-sc] path [file]\n", g_progname);
+  fprintf(stderr, "  %s mergetsv [-nl|-nb] [-sc] path [file]\n", g_progname);
   fprintf(stderr, "  %s version\n", g_progname);
   fprintf(stderr, "\n");
   exit(1);
@@ -621,6 +627,37 @@ static int runimporttsv(int argc, char **argv){
   }
   if(!path) usage();
   int rv = procimporttsv(path, file, omode, sc);
+  return rv;
+}
+
+
+/* parse arguments of mergetsv command */
+static int runmergetsv(int argc, char **argv){
+  char *path = NULL;
+  char *file = NULL;
+  int omode = 0;
+  bool sc = false;
+  for(int i = 2; i < argc; i++){
+    if(!path && argv[i][0] == '-'){
+      if(!strcmp(argv[i], "-nl")){
+        omode |= TDBONOLCK;
+      } else if(!strcmp(argv[i], "-nb")){
+        omode |= TDBOLCKNB;
+      } else if(!strcmp(argv[i], "-sc")){
+        sc = true;
+      } else {
+        usage();
+      }
+    } else if(!path){
+      path = argv[i];
+    } else if(!file){
+      file = argv[i];
+    } else {
+      usage();
+    }
+  }
+  if(!path) usage();
+  int rv = procmergetsv(path, file, omode, sc);
   return rv;
 }
 
@@ -1182,8 +1219,7 @@ static int procsetindex(const char *path, const char *name, int omode, int type)
 }
 
 
-/* perform importtsv command */
-static int procimporttsv(const char *path, const char *file, int omode, bool sc){
+static int procimporttsvimpl(const char *path, const char *file, int omode, int dmode, bool sc){
   FILE *ifp = file ? fopen(file, "rb") : stdin;
   if(!ifp){
     fprintf(stderr, "%s: could not open\n", file ? file : "(stdin)");
@@ -1208,6 +1244,8 @@ static int procimporttsv(const char *path, const char *file, int omode, bool sc)
   bool err = false;
   char *line, numbuf[TCNUMBUFSIZ];
   int cnt = 0;
+  bool (*dbput)(TCTDB *tdb, const char *pkstr, const char *cstr);
+  dbput = (dmode == TDBPDMERGE) ? tctdbputmerge3 : tctdbput3;
   while(!err && (line = mygetline(ifp)) != NULL){
     char *pv = strchr(line, '\t');
     if(!pv){
@@ -1223,7 +1261,7 @@ static int procimporttsv(const char *path, const char *file, int omode, bool sc)
     } else {
       pkey = line;
     }
-    if(!tctdbput3(tdb, pkey, pv + 1)){
+    if(!(*dbput)(tdb, pkey, pv + 1)){
       printerr(tdb);
       err = true;
     }
@@ -1243,6 +1281,18 @@ static int procimporttsv(const char *path, const char *file, int omode, bool sc)
   tctdbdel(tdb);
   if(ifp != stdin) fclose(ifp);
   return err ? 1 : 0;
+}
+
+
+/* perform importtsv command */
+static int procimporttsv(const char *path, const char *file, int omode, bool sc){
+  return procimporttsvimpl(path, file, omode, 0, sc);
+}
+
+
+/* perform mergetsv command */
+static int procmergetsv(const char *path, const char *file, int omode, bool sc){
+  return procimporttsvimpl(path, file, omode, TDBPDMERGE, sc);
 }
 
 

@@ -162,6 +162,13 @@ enum {                                   /* enumeration for post treatments */
   TDBQPSTOP = 1 << 24                    /* stop the iteration */
 };
 
+enum {                                   // enumeration for duplication behavior
+  TDBPDOVER,                             // overwrite an existing value
+  TDBPDKEEP,                             // keep the existing value
+  TDBPDCAT,                              // concatenate values
+  TDBPDMERGE                             // merge values
+};
+
 /* type of the pointer to a iterator function for each table record.
    `pkbuf' specifies the pointer to the region of the primary key.
    `pksiz' specifies the size of the region of the primary key.
@@ -367,7 +374,7 @@ bool tctdbputcat(TCTDB *tdb, const void *pkbuf, int pksiz, TCMAP *cols);
    If successful, the return value is true, else, it is false.
    If there is no corresponding record, a new record is created. */
 bool tctdbputmerge(TCTDB *tdb, const void *pkbuf, int pksiz, TCMAP *cols);
-
+bool tctdbputmerge3(TCTDB *tdb, const char *pkstr, const char *cstr);
 
 /* Concatenate columns in a table database object with a zero separated column string.
    `tdb' specifies the table database object connected as a writer.
