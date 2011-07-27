@@ -32,6 +32,7 @@ static int printdata(const char *ptr, int size, bool px);
 static char *mygetline(FILE *ifp);
 static int runcreate(int argc, char **argv);
 static int runinform(int argc, char **argv);
+static int runcount(int argc, char **argv);
 static int runput(int argc, char **argv);
 static int runout(int argc, char **argv);
 static int runget(int argc, char **argv);
@@ -41,6 +42,7 @@ static int runimporttsv(int argc, char **argv);
 static int runversion(int argc, char **argv);
 static int proccreate(const char *path, int bnum, int apow, int fpow, int opts);
 static int procinform(const char *path, int omode);
+static int proccount(const char *path, int omode);
 static int procput(const char *path, const char *kbuf, int ksiz, const char *vbuf, int vsiz,
                    int omode, int dmode);
 static int procout(const char *path, const char *kbuf, int ksiz, int omode);
@@ -64,6 +66,8 @@ int main(int argc, char **argv){
     rv = runcreate(argc, argv);
   } else if(!strcmp(argv[1], "inform")){
     rv = runinform(argc, argv);
+  } else if(!strcmp(argv[1], "count")){
+    rv = runcount(argc, argv);
   } else if(!strcmp(argv[1], "put")){
     rv = runput(argc, argv);
   } else if(!strcmp(argv[1], "out")){
@@ -92,6 +96,7 @@ static void usage(void){
   fprintf(stderr, "usage:\n");
   fprintf(stderr, "  %s create [-tl] [-td|-tb|-tt|-tx] path [bnum [apow [fpow]]]\n", g_progname);
   fprintf(stderr, "  %s inform [-nl|-nb] path\n", g_progname);
+  fprintf(stderr, "  %s count path\n", g_progname);
   fprintf(stderr, "  %s put [-nl|-nb] [-sx] [-dk|-dc|-dai|-dad] path key value\n", g_progname);
   fprintf(stderr, "  %s out [-nl|-nb] [-sx] path key\n", g_progname);
   fprintf(stderr, "  %s get [-nl|-nb] [-sx] [-px] [-pz] path key\n", g_progname);
@@ -221,6 +226,31 @@ static int runinform(int argc, char **argv){
   }
   if(!path) usage();
   int rv = procinform(path, omode);
+  return rv;
+}
+
+
+/* parse arguments of count command */
+static int runcount(int argc, char **argv){
+  char *path = NULL;
+  int omode = 0;
+  for(int i = 2; i < argc; i++){
+    if(!path && argv[i][0] == '-'){
+      if(!strcmp(argv[i], "-nl")){
+        omode |= HDBONOLCK;
+      } else if(!strcmp(argv[i], "-nb")){
+        omode |= HDBOLCKNB;
+      } else {
+        usage();
+      }
+    } else if(!path){
+      path = argv[i];
+    } else {
+      usage();
+    }
+  }
+  if(!path) usage();
+  int rv = proccount(path, omode);
   return rv;
 }
 
@@ -573,6 +603,27 @@ static int procinform(const char *path, int omode){
   printf("\n");
   printf("record number: %llu\n", (unsigned long long)tchdbrnum(hdb));
   printf("file size: %llu\n", (unsigned long long)tchdbfsiz(hdb));
+  if(!tchdbclose(hdb)){
+    if(!err) printerr(hdb);
+    err = true;
+  }
+  tchdbdel(hdb);
+  return err ? 1 : 0;
+}
+
+
+/* perform count command */
+static int proccount(const char *path, int omode){
+  TCHDB *hdb = tchdbnew();
+  if(g_dbgfd >= 0) tchdbsetdbgfd(hdb, g_dbgfd);
+  tchdbsetcodecfunc(hdb, _tc_recencode, NULL, _tc_recdecode, NULL);
+  if(!tchdbopen(hdb, path, HDBOREADER | omode)){
+    printerr(hdb);
+    tchdbdel(hdb);
+    return 1;
+  }
+  bool err = false;
+  printf("%llu\n", (unsigned long long)tchdbrnum(hdb));
   if(!tchdbclose(hdb)){
     if(!err) printerr(hdb);
     err = true;
