@@ -6,10 +6,11 @@
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
+#include <cstdarg>
 #include <tcutil.h>
 #include <map>
 #include <set>
-#include <ext/hash_map>
+#include <tr1/unordered_map>
 #include <google/sparse_hash_map>
 #include <google/dense_hash_map>
 
@@ -34,7 +35,7 @@ struct stringhash {                      // hash function for string
 typedef map<string, string> stlmap;
 typedef multimap<string, string> stlmmap;
 typedef set<string> stlset;
-typedef __gnu_cxx::hash_map<string, string, stringhash> gnuhash;
+typedef tr1::unordered_map<string, string, stringhash> trhash;
 typedef google::dense_hash_map<string, string, stringhash> ggldh;
 typedef google::sparse_hash_map<string, string, stringhash> gglsh;
 
@@ -52,7 +53,7 @@ static int runtctree(int argc, char **argv);
 static int runstlmap(int argc, char **argv);
 static int runstlmmap(int argc, char **argv);
 static int runstlset(int argc, char **argv);
-static int rungnuhash(int argc, char **argv);
+static int runtrhash(int argc, char **argv);
 static int runggldh(int argc, char **argv);
 static int rungglsh(int argc, char **argv);
 static int proctcmap(int rnum, bool rd);
@@ -60,7 +61,7 @@ static int proctctree(int rnum, bool rd);
 static int procstlmap(int rnum, bool rd);
 static int procstlmmap(int rnum, bool rd);
 static int procstlset(int rnum, bool rd);
-static int procgnuhash(int rnum, bool rd);
+static int proctrhash(int rnum, bool rd);
 static int procggldh(int rnum, bool rd);
 static int procgglsh(int rnum, bool rd);
 
@@ -80,8 +81,8 @@ int main(int argc, char **argv){
     rv = runstlmmap(argc, argv);
   } else if(!strcmp(argv[1], "stlset")){
     rv = runstlset(argc, argv);
-  } else if(!strcmp(argv[1], "gnuhash")){
-    rv = rungnuhash(argc, argv);
+  } else if(!strcmp(argv[1], "trhash")){
+    rv = runtrhash(argc, argv);
   } else if(!strcmp(argv[1], "ggldh")){
     rv = runggldh(argc, argv);
   } else if(!strcmp(argv[1], "gglsh")){
@@ -103,7 +104,7 @@ static void usage(void){
   fprintf(stderr, "  %s stlmap [-rd] rnum\n", g_progname);
   fprintf(stderr, "  %s stlmmap [-rd] rnum\n", g_progname);
   fprintf(stderr, "  %s stlset [-rd] rnum\n", g_progname);
-  fprintf(stderr, "  %s gnuhash [-rd] rnum\n", g_progname);
+  fprintf(stderr, "  %s trhash [-rd] rnum\n", g_progname);
   fprintf(stderr, "  %s ggldh [-rd] rnum\n", g_progname);
   fprintf(stderr, "  %s gglsh [-rd] rnum\n", g_progname);
   fprintf(stderr, "\n");
@@ -246,8 +247,8 @@ static int runstlset(int argc, char **argv){
 }
 
 
-// parse arguments of gnuhash command
-static int rungnuhash(int argc, char **argv){
+// parse arguments of trhash command
+static int runtrhash(int argc, char **argv){
   char *rstr = NULL;
   bool rd = false;
   for(int i = 2; i < argc; i++){
@@ -266,7 +267,7 @@ static int rungnuhash(int argc, char **argv){
   if(!rstr) usage();
   int rnum = tcatoi(rstr);
   if(rnum < 1) usage();
-  int rv = procgnuhash(rnum, rd);
+  int rv = proctrhash(rnum, rd);
   return rv;
 }
 
@@ -540,17 +541,18 @@ static int procstlset(int rnum, bool rd){
 }
 
 
-// perform gnuhash command
-static int procgnuhash(int rnum, bool rd){
-  iprintf("<GNU Hash Writing Test>\n  rnum=%d  rd=%d\n\n", rnum, rd);
+// perform trhash command
+static int proctrhash(int rnum, bool rd){
+  iprintf("<TR1 Hash Writing Test>\n  rnum=%d  rd=%d\n\n", rnum, rd);
   double stime = tctime();
   {
-    gnuhash mymap;
-    mymap.resize(rnum + 1);
+    trhash mymap;
+    mymap.rehash(rnum + 1);
+    mymap.max_load_factor(1.0);
     for(int i = 1; i <= rnum; i++){
       char buf[RECBUFSIZ];
       sprintf(buf, "%08d", i);
-      mymap.insert_noresize(gnuhash::value_type(buf, buf));
+      mymap.insert(trhash::value_type(buf, buf));
       if(rnum > 250 && i % (rnum / 250) == 0){
         putchar('.');
         fflush(stdout);
@@ -564,7 +566,7 @@ static int procgnuhash(int rnum, bool rd){
       for(int i = 1; i <= rnum; i++){
         char buf[RECBUFSIZ];
         sprintf(buf, "%08d", i);
-        gnuhash::const_iterator it = mymap.find(buf);
+        trhash::const_iterator it = mymap.find(buf);
         if(it == mymap.end()){
           iprintf("not found\n");
           break;

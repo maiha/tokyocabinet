@@ -1,6 +1,6 @@
 ================================================================
  Tokyo Cabinet: a modern implementation of DBM
- Copyright (C) 2006-2009 Mikio Hirabayashi
+ Copyright (C) 2006-2011 Fal Labs
 ================================================================
 
 
@@ -10,7 +10,6 @@ How to install Tokyo Cabinet is explained in the specification.
   README         - this file
   COPYING        - license
   ChangeLog      - history of enhancement
-  THANKS         - list of contributors
   doc/index.html - index of documents
 
 
@@ -27,8 +26,8 @@ Contents of the directory tree is below.
 Tokyo Cabinet is released under the terms of the GNU Lesser General
 Public License.  See the file `COPYING' for details.
 
-Tokyo Cabinet was written by Mikio Hirabayashi.  You can contact the
-author by e-mail to `hirarin@gmail.com'.
+Tokyo Cabinet was written by FAL Labs.  You can contact the author
+by e-mail to `hirarin@gmail.com'.
 
 
 Thanks.

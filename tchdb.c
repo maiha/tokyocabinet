@@ -1,6 +1,6 @@
 /*************************************************************************************************
  * The hash database API of Tokyo Cabinet
- *                                                      Copyright (C) 2006-2010 Mikio Hirabayashi
+ *                                                               Copyright (C) 2006-2012 FAL Labs
  * This file is part of Tokyo Cabinet.
  * Tokyo Cabinet is free software; you can redistribute it and/or modify it under the terms of
  * the GNU Lesser General Public License as published by the Free Software Foundation; either
@@ -2377,7 +2377,7 @@ static void tchdbfbpmerge(TCHDB *hdb){
   while(cur < end){
     if(cur->off > 0){
       HDBFB *next = cur + 1;
-      if(cur->off + cur->rsiz == next->off){
+      if(cur->off + cur->rsiz == next->off && cur->rsiz + next->rsiz <= HDBFBMAXSIZ){
         if(hdb->dfcur == next->off) hdb->dfcur += next->rsiz;
         if(hdb->iter == next->off) hdb->iter += next->rsiz;
         cur->rsiz += next->rsiz;

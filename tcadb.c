@@ -1,6 +1,6 @@
 /*************************************************************************************************
  * The abstract database API of Tokyo Cabinet
- *                                                      Copyright (C) 2006-2010 Mikio Hirabayashi
+ *                                                               Copyright (C) 2006-2012 FAL Labs
  * This file is part of Tokyo Cabinet.
  * Tokyo Cabinet is free software; you can redistribute it and/or modify it under the terms of
  * the GNU Lesser General Public License as published by the Free Software Foundation; either
@@ -3067,9 +3067,8 @@ TCLIST *tcadbmisc(TCADB *adb, const char *name, const TCLIST *args){
         argc--;
         for(int i = 0; i < argc; i += 2){
           const char *kbuf, *vbuf;
-          int ksiz, vsiz;
-          TCLISTVAL(kbuf, args, i, ksiz);
-          TCLISTVAL(vbuf, args, i + 1, vsiz);
+          kbuf = TCLISTVALPTR(args, i);
+          vbuf = TCLISTVALPTR(args, i + 1);
           int type = tctdbstrtoindextype(vbuf);
           if(type >= 0){
             if(!tctdbsetindex(adb->tdb, kbuf, type)) err = true;

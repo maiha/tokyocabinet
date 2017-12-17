@@ -1,6 +1,6 @@
 /*************************************************************************************************
  * The utility API of Tokyo Cabinet
- *                                                      Copyright (C) 2006-2010 Mikio Hirabayashi
+ *                                                               Copyright (C) 2006-2012 FAL Labs
  * This file is part of Tokyo Cabinet.
  * Tokyo Cabinet is free software; you can redistribute it and/or modify it under the terms of
  * the GNU Lesser General Public License as published by the Free Software Foundation; either
@@ -44,7 +44,7 @@ void *tcmalloc(size_t size){
 
 /* Allocate a nullified region on memory. */
 void *tccalloc(size_t nmemb, size_t size){
-  assert(nmemb > 0 && size < INT_MAX && size > 0 && size < INT_MAX);
+  assert(nmemb > 0 && nmemb < INT_MAX && size > 0 && size < INT_MAX);
   char *p;
   TCCALLOC(p, nmemb, size);
   return p;

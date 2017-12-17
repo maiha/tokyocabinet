@@ -7,11 +7,11 @@
 #================================================================
 
 # Package name
-AC_INIT(tokyocabinet, 1.4.45)
+AC_INIT(tokyocabinet, 1.4.48)
 
 # Package information
 MYLIBVER=9
-MYLIBREV=8
+MYLIBREV=11
 MYFORMATVER="1.0"
 
 # Targets
@@ -27,7 +27,7 @@ MYMAN1FILES="$MYMAN1FILES tcbtest.1 tcbmttest.1 tcbmgr.1 tcftest.1 tcfmttest.1 t
 MYMAN1FILES="$MYMAN1FILES tcttest.1 tctmttest.1 tctmgr.1 tcatest.1 tcamttest.1 tcamgr.1"
 MYMAN3FILES="tokyocabinet.3 tcutil.3 tcxstr.3 tclist.3 tcmap.3 tctree.3 tcmdb.3 tcmpool.3"
 MYMAN3FILES="$MYMAN3FILES tchdb.3 tcbdb.3 tcfdb.3 tctdb.3 tcadb.3"
-MYDOCUMENTFILES="COPYING ChangeLog THANKS doc tokyocabinet.idl"
+MYDOCUMENTFILES="COPYING ChangeLog doc tokyocabinet.idl"
 MYPCFILES="tokyocabinet.pc"
 
 # Building flags
