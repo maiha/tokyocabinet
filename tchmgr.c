@@ -568,6 +568,7 @@ static int procinform(const char *path, int omode){
     return 1;
   }
   bool err = false;
+  bool large = false;
   const char *npath = tchdbpath(hdb);
   if(!npath) npath = "(unknown)";
   printf("path: %s\n", npath);
@@ -595,14 +596,19 @@ static int procinform(const char *path, int omode){
   printf("modified time: %s\n", date);
   uint8_t opts = tchdbopts(hdb);
   printf("options:");
-  if(opts & HDBTLARGE) printf(" large");
+  if(opts & HDBTLARGE) {
+    printf(" large");
+    large = true;}
   if(opts & HDBTDEFLATE) printf(" deflate");
   if(opts & HDBTBZIP) printf(" bzip");
   if(opts & HDBTTCBS) printf(" tcbs");
   if(opts & HDBTEXCODEC) printf(" excodec");
   printf("\n");
   printf("record number: %llu\n", (unsigned long long)tchdbrnum(hdb));
-  printf("file size: %llu\n", (unsigned long long)tchdbfsiz(hdb));
+  unsigned long long size = (unsigned long long) tchdbfsiz(hdb);
+  printf("file size: %llu\n", size);
+  if (!large && (size >= 2147483648))
+          printf("WARNING: file size too large for a database without LARGE option\n");
   if(!tchdbclose(hdb)){
     if(!err) printerr(hdb);
     err = true;
